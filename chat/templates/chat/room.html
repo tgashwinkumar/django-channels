@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <script src="https://use.fontawesome.com/45ad073946.js"></script>
+    <title>Chat Room</title>
+  </head>
+  <body>
+    <style>
+        .container{
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        #chat-box{ 
+            box-shadow: 5px 5px 10px rgba(0,0,0,.3);
+        }
+      
+        #chat-log{
+            height: 400px;
+            width: 100%;
+            background: rgb(214, 255, 223);
+            overflow-y: auto;
+        }
+    </style>
+    {{ room_name|json_script:"room-name" }}
+    <div class="container h-100 d-flex justify-content-center align-items-center pt-2">
+        <div id="chat-box" class="w-100">
+            <div id="chat-header" class="bg-dark p-3 text-light">
+                Stockino - Group Chat
+            </div>
+            <div id="chat-log" class="d-flex justify-content-end flex-column bd-highlight pt-3">
+                
+            </div>
+            <div id="chat-footer" class="bg-secondary d-flex p-2">
+                <input type="text" id="chat-message-input" placeholder="Type a message " class="p-2 flex-grow-1 bd-highlight"/>
+                <button id="chat-message-submit" class="bd-highlight btn btn-success">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + roomName
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#chat-log').innerHTML += `<div class="chat-message d-flex pt-2 border-secondary border-top">
+                <p class="px-2 text-success" style="width: 10%;">User</p>
+                <p class="flex-grow-1">${data.message}</p>
+            </div>`;
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            console.log(document.querySelector("#chat-log"))
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
+  </body>
+</html>
